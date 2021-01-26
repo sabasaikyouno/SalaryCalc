@@ -11,7 +11,7 @@ URL https://fierce-tundra-76379.herokuapp.com/salaryLists
 ![2021-01-27-03-52-29_Trim](https://user-images.githubusercontent.com/29295080/105892785-ab752580-6055-11eb-95df-260d8eef3d25.gif)
 URL https://fierce-tundra-76379.herokuapp.com/?data=2020-12-11&swip=0
 
-# Note
+# Usage
 ### DEMO 1  
 "￥" は月給です。  
 "労働" はその月の合計労働時間です。  
