@@ -12,12 +12,12 @@ DEMO 2
 URL https://fierce-tundra-76379.herokuapp.com/?data=2020-12-11&swip=0
 
 # Note
-DEMO 1
+*DEMO 1*  
 ￥ は月給です。
 労働 はその月の合計労働時間です。
 前後30年分です。
 
-DEMO 2
+*DEMO 2*  
 ￥ は日給です。
 労働時間 はその日の労働時間です。
 右下の ￥ は現ページの月給です。
