@@ -1,0 +1,498 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('home:server');
+var http = require('http');
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}
+
+var io = require('socket.io')(server);
+var moment = require('moment');
+var holiday_jp = require('@holiday-jp/holiday_jp');
+//モデル読み込み
+var Salary = require('../models/salary');
+const { time } = require('console');
+const { resolve } = require('path');
+const { Sequelize } = require('../models/sequelize-loader');
+const Op = Sequelize.Op;
+Salary.sync();
+
+io.on('connection', (socket) => {
+
+  console.log("hello")
+
+  //一か月の合計労働時間
+  socket.on('get_total_working', (date) => {
+    let start = moment(date[0]).format("YYYY-MM-11 9:mm:ss");
+    let end = moment(date[0]).add(1, 'M').format("YYYY-MM-11 8:59:59");
+    Salary.findAll({
+      where: {
+        time: {
+          [Op.between]: [start,end]
+        }
+      }
+    }).then(salaries => {
+      total_working_time(salaries,socket,date[1],date[2]);
+    });
+  });
+
+  //一か月給料
+  socket.on('one_months_salary', (date) => {
+    annual_monthly_pay(socket,date[0],date[1],date[2]);
+  });
+
+  //有給の時
+  socket.on('button_paid',(date) => {
+    var date = new Date(date);
+    Salary.findAll({
+      where: {
+        time: date
+      }
+    }).then((salaries) => {
+      Salary.upsert({
+        time: date,
+        daily_salary: salary_calc(date, 7, 30, salaries),
+        working_hours: working_time_calc(date, 7, 30, salaries),
+        paid_holiday: 1
+      });
+    }).then(() => {
+      socket.emit('client_button_dis',1);
+    });
+  });
+
+  //7時間30分の時
+  socket.on('button_7_5', (date) => {
+    var date = new Date(date);
+    Salary.findAll({
+      where: {
+        time: date
+      }
+    }).then((salaries) => {
+      Salary.upsert({
+        time: date,
+        daily_salary: salary_calc(date, 7, 30, salaries),
+        working_hours: working_time_calc(date, 7, 30, salaries)
+      });
+    }).then(() => {
+      socket.emit('client_button_dis',1);
+    });
+  });
+
+  //15分の時
+  socket.on('button_0_15', (date) => {
+    var date = new Date(date);
+    Salary.findAll({
+      where: {
+        time: date
+      }
+    }).then((salaries) => {
+      Salary.upsert({
+        time: date,
+        daily_salary: salary_calc(date, 0, 15, salaries),
+        working_hours: working_time_calc(date, 0, 15, salaries)
+      });
+    }).then(() => {
+      socket.emit('client_button_dis',1);
+    });
+  });
+
+  //30分の時
+  socket.on('button_0_5', (date) => {
+    var date = new Date(date);
+    Salary.findAll({
+      where: {
+        time: date
+      }
+    }).then((salaries) => {
+      Salary.upsert({
+        time: date,
+        daily_salary: salary_calc(date, 0, 30, salaries),
+        working_hours: working_time_calc(date, 0, 30, salaries)
+      });
+    }).then(() => {
+      socket.emit('client_button_dis',1);
+    });
+  });
+
+  //1時間の時
+  socket.on('button_1', (date) => {
+    var date = new Date(date);
+    Salary.findAll({
+      where: {
+        time: date
+      }
+    }).then((salaries) => {
+      Salary.upsert({
+        time: date,
+        daily_salary: salary_calc(date, 1, 0, salaries),
+        working_hours: working_time_calc(date, 1, 0, salaries)
+      });
+    }).then(() => {
+      socket.emit('client_button_dis',1);
+    });
+  });
+
+  //削除ボタンの時
+  socket.on('button_dele', (date) => {
+    var date = new Date(date);
+
+    Salary.destroy({
+      where: {
+        time: date
+      }
+    }).then(() => {
+      socket.emit('client_button_dis',1);
+    });
+  });
+
+  //homeの全部
+  socket.on('get_all',(date) => {
+    all(socket,date);
+  });
+
+  //本ページの全部
+  socket.on('get_all_month',(date) => {
+    all_month(socket,date);
+  });
+
+});
+
+//一か月分の月給と月労働時間を取得,emit
+async function all_month(socket, date){
+  let start;
+  let end;
+  //有給初期化
+  let paid_holiday = 11;
+  //日付の差
+  let diff;
+  let salary_lists = [];
+  let working_time_lists = [];
+  if(moment(date).date() <= 10){
+    start = moment(date).subtract(1,'M').format("YYYY-MM-11 9:00:00");
+    end = moment(date).format("YYYY-MM-11 8:59:59");
+    diff = moment(moment(end).format("YYYY-MM-10")).diff(moment(moment(start).format("YYYY-MM-DD")), 'days')+1;
+  }else{
+    start = moment(date).format("YYYY-MM-11 9:00:00");
+    end = moment(date).add(1, 'M').format("YYYY-MM-11 8:59:59");
+    diff = moment(moment(end).format("YYYY-MM-10")).diff(moment(moment(start).format("YYYY-MM-DD")), 'days')+1;
+  }
+  //一か月分の給料を salary_lists に入れている
+  await Salary.findAll({
+    attributes: ['daily_salary','time'],
+    where:{
+      time:{
+        [Op.between]: [start, end]
+      }
+    },
+    order: [
+      ['time', 'ASC']
+    ]
+  }).then(salaries => {
+    for(let x = 0; x < diff; x++){
+      if(salaries.some(value => moment(value['dataValues']['time']).format("YYYY-MM-DD") == moment(start).add(x,'d').format("YYYY-MM-DD"))){
+        salary_lists.push(salaries.find(valu => moment(valu['dataValues']['time']).format("YYYY-MM-DD") == moment(start).add(x,'d').format("YYYY-MM-DD"))['dataValues']['daily_salary']);
+      }else{
+        salary_lists.push(0);
+      }
+    }
+  });
+
+  //一か月分の労働時間を　working_time_lists に入れている
+  await Salary.findAll({
+    attributes: ['working_hours','time'],
+    where: {
+      time: {
+        [Op.between]: [start, end]
+      }
+    },
+    order: [
+      ['time', 'ASC']
+    ]
+  }).then(salaries => {
+    for(let x = 0; x < diff; x++){
+      if(salaries.some(value => moment(value['dataValues']['time']).format("YYYY-MM-DD") == moment(start).add(x,'d').format("YYYY-MM-DD"))){
+        working_time_lists.push(moment(salaries.find(valu => moment(valu['dataValues']['time']).format("YYYY-MM-DD") == moment(start).add(x,'d').format("YYYY-MM-DD"))['dataValues']['working_hours']).format("HH.mm"));
+      }else{
+        working_time_lists.push("0.0");
+      }
+    }
+  });
+
+  //有給残日数
+  await Salary.sum('paid_holiday').then(data => {
+    let start = moment();
+    let end = moment(start).diff("2020-7-15", 'y');
+    //有給日数の計算
+    for(let x = 0; x < end;x++){
+      if(x == 0){
+        paid_holiday += 12;
+      }else if(x == 1){
+        paid_holiday += 14;
+      }else if(x == 2){
+        paid_holiday += 16;
+      }else if(x == 3){
+        paid_holiday += 18;
+      }else{
+        paid_holiday += 20;
+      }
+    }
+    if(isNaN(data)){
+      console.log("NaN")
+    }else{
+      paid_holiday -= data;
+    }
+  });
+
+  socket.emit('client_all_month', [salary_lists,working_time_lists,paid_holiday]);
+}
+
+
+//12か月分の月給と月労働時間を取得,emit
+async function all(socket,date){
+  let start = moment(date).format("YYYY-MM-11 9:00:00");
+  let end = moment(date).add(1,'M').format("YYYY-MM-11 8:59:59");
+  let salary_lists = [];
+  let working_time_lists = [];
+  //有給の初期化
+  let paid_holiday = 11;
+  for(let count = 0; count < 12; count++){
+    let startFor = moment(start).add(count,'M').format("YYYY-MM-DD hh:mm:ss");
+    let endFor = moment(end).add(count,'M').format("YYYY-MM-11 hh:mm:ss");
+    await Salary.sum('daily_salary',{
+      where: {
+        time: {
+          [Op.between]: [startFor, endFor]
+        }
+      }
+    }).then(salaries => {
+      if(isNaN(salaries)){//給料がないとき
+        salary_lists.push(0);
+      }else{
+        salary_lists.push(salaries);
+      }
+    });
+  }
+  for(let count = 0; count < 12; count++){
+    let startFor = moment(start).add(count,'M').format("YYYY-MM-DD hh:mm:ss");
+    let endFor = moment(end).add(count,'M').format("YYYY-MM-DD hh:mm:ss");
+    await Salary.findAll({
+      where: {
+        time: {
+          [Op.between]: [startFor, endFor]
+        }
+      }
+    }).then(salaries => {
+      let total_working = 0;
+      for(let salari of salaries){
+        let sec_time_hour = moment(salari['dataValues']['working_hours'], "YYYY-MM-DD hh:mm").hour();
+        let sec_time_min = moment(salari['dataValues']['working_hours'], "YYYY-MM-DD hh:mm").minute();
+        total_working += (sec_time_hour * 3600) + (sec_time_min * 60);
+      }
+      working_time_lists.push(Math.floor(total_working/3600)+"."+total_working%3600/60);
+    });
+  }
+  //有給残日数
+  await Salary.sum('paid_holiday').then(data => {
+    let start = moment();
+    let end = moment(start).diff("2020-7-15", 'y');
+    //有給日数の計算
+    for(let x = 0; x < end;x++){
+      if(x == 0){
+        paid_holiday += 12;
+      }else if(x == 1){
+        paid_holiday += 14;
+      }else if(x == 2){
+        paid_holiday += 16;
+      }else if(x == 3){
+        paid_holiday += 18;
+      }else{
+        paid_holiday += 20;
+      }
+    }
+    if(isNaN(data)){
+      console.log("NaN")
+    }else{
+      paid_holiday -= data;
+    }
+  });
+  socket.emit('client_all',[salary_lists,working_time_lists,paid_holiday]);
+}
+
+
+//一か月の合計給料
+function annual_monthly_pay(socket, date,sequ,id) {
+  let start = moment(date).format("YYYY-MM-DD 9:mm:ss");
+  let end = moment(date).add(1,'M').format("YYYY-MM-11 8:59:59");
+  Salary.sum('daily_salary',{
+    where: {
+      time: {
+        [Op.between]: [start, end]
+      }
+    }
+  }).then(salaries => {
+    if(sequ == null){//連番が必要ないとき
+      if(isNaN(salaries)){// 月給が0の場合
+        socket.emit('get_monthly_salary', 0);
+      }else{
+        socket.emit('get_monthly_salary', salaries);
+      }
+    }else{
+      if(isNaN(salaries)){// 月給が0の場合
+        socket.emit('get_monthly_salary_'+id, [sequ,0]);
+      }else{
+        socket.emit('get_monthly_salary_'+id, [sequ,salaries]);
+      }
+    }
+    
+    
+  })
+}
+
+//給料計算
+function salary_calc(date, time_hour, time_min, salaries){
+
+  var ishoildy = holiday_jp.between(date,date,'name');
+  var salary_15 = 212.5;
+  var mag = 1.25;
+  var number_15 = number_15_calc(time_hour, time_min, salaries)
+  
+  //日祝時の計算
+  if(ishoildy[0] || date.getDay() == 0){
+    return Math.floor((salary_15 * number_15) * mag);
+  }else{//平日時の計算
+    if(number_15 >= 33){//残業時の計算
+      return Math.floor((32 * salary_15) + ((number_15 - 32) * (salary_15 * mag)));
+    }else{//何もない時の計算
+      return Math.floor(salary_15 * number_15);
+    }
+  }
+
+}
+
+//15分が何個あるか
+function number_15_calc(time_hour, time_min, salaries){
+  var time_15 = (time_hour * 60 / 15) + (time_min / 15);
+  if(salaries[0]){
+    var found_time_hour = moment(salaries[0]['dataValues']['working_hours'], "YYYY-MM-DD hh:mm").hour()
+    var found_time_min = moment(salaries[0]['dataValues']['working_hours'], "YYYY-MM-DD hh:mm").minute()
+    var total_time = (found_time_hour * 60 / 15) + (found_time_min / 15) + time_15
+    return total_time;
+  }
+  return time_15;
+}
+
+//一日何時間働いたか
+function working_time_calc(date, time_hour, time_min, salaries){
+
+  var time_sec = (time_hour * 3600) + (time_min * 60)
+  if(salaries[0]){
+    var found_time_hour = moment(salaries[0]['dataValues']['working_hours'], "YYYY-MM-DD hh:mm").hour()
+    var found_time_min = moment(salaries[0]['dataValues']['working_hours'], "YYYY-MM-DD hh:mm").minute()
+    var total_time = (found_time_hour * 3600) + (found_time_min * 60) + time_sec
+    return moment(date).subtract(9, 'h').add(total_time, 's');
+  }
+  return moment(date).subtract(9, 'h').add(time_sec, 's');
+}
+
+//一か月の合計労働時間
+function total_working_time(salaries,socket,sequ,id){
+  let total_working = 0;
+  for(let salari of salaries){
+    let sec_time_hour = moment(salari['dataValues']['working_hours'], "YYYY-MM-DD hh:mm").hour();
+    let sec_time_min = moment(salari['dataValues']['working_hours'], "YYYY-MM-DD hh:mm").minute();
+    total_working += (sec_time_hour * 3600) + (sec_time_min * 60)
+  }
+  if(sequ == null){
+    socket.emit('total_working_time', Math.floor(total_working/3600)+"."+total_working%3600/60);
+  }else{
+    socket.emit('total_working_time_'+id, [sequ, Math.floor(total_working/3600)+"."+total_working%3600/60]);
+  }
+}
+
+
+
+
+

@@ -1,0 +1,7 @@
+{
+  "name": "salaryCalc",
+  "description": "給料計算",
+  "logo": "",
+  "keywords": ["node"],
+  "image": "heroku/nodejs"
+}

@@ -1,0 +1,48 @@
+body {
+  font: 30px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+h4{
+  margin: 0%;
+}
+h5{
+  margin: 0%;
+}
+#lists {
+  margin: 8px;
+  height: 1100px;
+}
+#list {
+  padding-left: 5px;
+  margin-bottom: 5px;
+  border: 4px double #ddd;
+}
+#year {
+  height: 38px;
+  border-bottom: solid 6px #ff7d6e;
+  width: 97px;
+  margin-bottom: 10px;
+}
+.swiper-container {
+}
+input[type="submit"],
+input[type="button"] {
+  border-radius: 0;
+  -webkit-box-sizing: content-box;
+  -webkit-appearance: button;
+  appearance: button;
+  padding: 5px 30px;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+input[type="submit"]::-webkit-search-decoration,
+input[type="button"]::-webkit-search-decoration {
+  display: none;
+}
+.paidholiday{
+  position: fixed;
+  top: 0;
+  right: 13px;
+  background-color:#CCFFFF;
+  display: inline-block;
+  z-index: 2;
+}
