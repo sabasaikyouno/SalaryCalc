@@ -215,6 +215,24 @@ io.on('connection', (socket) => {
     });
   });
 
+  //-15分の時
+  socket.on('button_sub_15', (date) => {
+    var date = new Date(date);
+    Salary.findAll({
+      where: {
+        time: date
+      }
+    }).then((salaries) => {
+      Salary.upsert({
+        time: date,
+        daily_salary: salary_calc(date, 0, -15, salaries),
+        working_hours: working_time_calc(date, 0, -15, salaries)
+      });
+    }).then(() => {
+      socket.emit('client_button_dis',1);
+    });
+  });
+  
   //削除ボタンの時
   socket.on('button_dele', (date) => {
     var date = new Date(date);
