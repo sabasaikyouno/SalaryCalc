@@ -37,6 +37,12 @@ var button_1 = function button_1(ele){
   socket.emit('button_1', date);
 }
 
+//-15分の時
+var button_sub_15 = function button_sub_15(ele){
+  var date = ele.id;
+  socket.emit('button_sub_15', date);
+}
+
 //有給の場合
 var button_paid = function button_paid(ele){
   var date = ele.id;
@@ -97,6 +103,7 @@ socket.on('client_all_month',(data) => {
                       '<input type="button" id="'+moment(start).add(x,'d').format("YYYY-MM-DD")+'" value="15" onclick="button_0_15(this)">'+
                       '<input type="button" id="'+moment(start).add(x,'d').format("YYYY-MM-DD")+'" value="30" onclick="button_0_5(this)">'+
                       '<input type="button" id="'+moment(start).add(x,'d').format("YYYY-MM-DD")+'" value="1" onclick="button_1(this)">'+
+                      '<input type="button" id="'+moment(start).add(x,'d').format("YYYY-MM-DD")+'" value="-15" onclick="button_sub_15(this)">'+
                       '<input class="paidbutton" type="button" id="'+moment(start).add(x,'d').format("YYYY-MM-DD")+'" value="有" onclick="button_paid(this)">'+
                       '<input class="button_dele" type="button" id="'+moment(start).add(x,'d').format("YYYY-MM-DD")+'" value="削除" onclick="button_dele(this)">';
   }
@@ -150,5 +157,6 @@ window.button_7_5 = button_7_5;
 window.button_0_15 = button_0_15;
 window.button_0_5 = button_0_5;
 window.button_1 = button_1;
+window.button_sub_15 = button_sub_15;
 window.button_paid = button_paid;
 window.button_dele = button_dele;
