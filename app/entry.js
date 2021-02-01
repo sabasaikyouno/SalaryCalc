@@ -65,8 +65,10 @@ swiper.on('slideChange',function(swiper){
   let pre = this.previousIndex;
   if(acti > pre){//右から左にスワイプした時来月の一覧を表示
     all_update();
+    scroll(0,0)
   } else {//左から右にスワイプしたとき先月の一覧を表示
     all_update();
+    scroll(0,0)
   }
 });
 
@@ -94,7 +96,6 @@ socket.on('client_all_month',(data) => {
   document.getElementById('paidholiday').innerHTML = "残日数"+paid_holiday;
   let time = document.getElementById('time'+act);
   time.innerHTML = "";
-  scroll(0,0)
   
   for(let x = 0; x < diff; x++){
     time.innerHTML += '<div id="display"><p>'+moment(start).add(x,'d').format("YYYY-MM-DD")+'</p>'+
