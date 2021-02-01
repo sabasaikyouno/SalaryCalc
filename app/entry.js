@@ -94,6 +94,7 @@ socket.on('client_all_month',(data) => {
   document.getElementById('paidholiday').innerHTML = "残日数"+paid_holiday;
   let time = document.getElementById('time'+act);
   time.innerHTML = "";
+  scroll(0,0)
   
   for(let x = 0; x < diff; x++){
     time.innerHTML += '<div id="display"><p>'+moment(start).add(x,'d').format("YYYY-MM-DD")+'</p>'+
@@ -106,6 +107,10 @@ socket.on('client_all_month',(data) => {
                       '<input type="button" id="'+moment(start).add(x,'d').format("YYYY-MM-DD")+'" value="-15" onclick="button_sub_15(this)">'+
                       '<input class="paidbutton" type="button" id="'+moment(start).add(x,'d').format("YYYY-MM-DD")+'" value="有" onclick="button_paid(this)">'+
                       '<input class="button_dele" type="button" id="'+moment(start).add(x,'d').format("YYYY-MM-DD")+'" value="削除" onclick="button_dele(this)">';
+    // 今日まで画面をスクロールする
+    if(moment(start).add(x,'d').format("YYYY-MM-DD") == moment().format("YYYY-MM-DD")){
+      scrollBy(0, document.getElementById(moment().format("YYYY-MM-DD")).getBoundingClientRect().top-150)
+    }
   }
   //スワイパーの高さを合わせる
   swiper.updateAutoHeight(1);
