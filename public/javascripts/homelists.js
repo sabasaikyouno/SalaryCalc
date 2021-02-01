@@ -17,7 +17,7 @@ const swiper = new Swiper('.swiper-container', {
 
 //emit
 function update_display(act,abso){
-  let start = new Date(moment().subtract(1,'M').add(abso,'y').format("YYYY")+"-12-11");
+  let start = new Date(moment().subtract(1,'y').add(abso,'y').format("YYYY"+"-12-11"));
   let end = new Date(moment().add(abso,'y').format("YYYY")+"-12-11");
   socket.emit('get_all', moment(start).format("YYYY-MM-DD"));
 }
@@ -26,8 +26,8 @@ function update_display(act,abso){
 socket.on('client_all', (data) => {
   let act = swiper.activeIndex;
   let abso = act - 30;
-  let start = new Date(moment().subtract(1,'M').add(abso,'y').format("YYYY")+"-12-11");
-  let end = new Date(moment().add(abso,'y').format("YYYY")+"-12-11");
+  let start = new Date(moment().subtract(1,'y').add(abso,'y').format("YYYY"+"-12-12"));
+  let end = new Date(moment().add(abso,'y').format("YYYY"+"-12-12"));
   let salary_lists = data[0];
   let working_lists = data[1];
   //有給残日数の表示
